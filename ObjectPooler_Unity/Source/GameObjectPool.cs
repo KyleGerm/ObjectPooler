@@ -13,21 +13,23 @@ namespace KylesUnityLib.Pooling
         private GameObject _template;
         private ulong[] objMask;
         private ulong chunkMask;
-        public int MaxSize { get; private set; }
+        public readonly int MaxSize;
+        private Action<GameObject> CreationAction;
         public int SizeOfPool => _poolCount;
         public bool Active => _active;
 
         public GameObjectPool(int maxSize)
         {
             //ensures the arraySize can house all objects up to a maxSize
-            objMask = new ulong[(maxSize + 63) / 64];
-            MaxSize = maxSize;
+            MaxSize = Math.Min(maxSize, 4096);
+
+            objMask = new ulong[(MaxSize + 63) / 64];
         }
         internal GameObjectPool()
         {
             _active = false;
         }
-        public static GameObjectPool Create(in GameObject obj, int size, int maxSize, Action<GameObject> action = null)
+        public static GameObjectPool Create(in GameObject obj, int size, int maxSize, Action<GameObject> onCreation = null)
         {
             if (obj == null)
             {
@@ -42,7 +44,7 @@ namespace KylesUnityLib.Pooling
             if(size >  maxSize) size = maxSize;
             var pool = new GameObjectPool(maxSize);
             
-            if(pool.GenerateList(obj, size,action))
+            if(pool.GenerateList(obj, size,onCreation))
                 return pool;
 
             Logger.LogWarning("Pooler was unable to initialize. Check parameters and try again.");
@@ -53,8 +55,8 @@ namespace KylesUnityLib.Pooling
         /// </summary>
         /// <param name="obj">Object templae to be used in this pool</param>
         /// <param name="size">Initial size of pool</param>
-        /// <param name = "action">Any action to be performed on object creation</param>
-        public bool GenerateList(in GameObject obj, int size, Action<GameObject> action = null)
+        /// <param name = "onCreation">Any action to be performed on object creation.<br/>This will also be applied to future objects created, to ensure each object starts in the same state.</param>
+        public bool GenerateList(in GameObject obj, int size, Action<GameObject> onCreation = null)
         {
             if (_active) {
                 Logger.LogWarning("Pooler is already in use, and has objects. Either destroy the pool using DestroyList(), or take ownership of the objects using RemoveListButDontDestroy()");
@@ -71,19 +73,15 @@ namespace KylesUnityLib.Pooling
             _template = obj;
             _poolCount = 0;
             chunkMask = 0;
+            CreationAction = onCreation;
             Array.Clear(objMask, 0, objMask.Length);
             for (int i = 0; i < size; i++)
             {
-                if(CreateNewPooledObject(false, out IPoolable newObj))
-                {
-                    action?.Invoke(newObj.gameObject);
-                }
-                
+                CreateNewPooledObject(false, out _); 
             }
             _active = _poolCount > 0;
 
             if(!_active) return false;
-
 
             for(int i = 0;i < objMask.Length; i++)
             {
@@ -273,30 +271,32 @@ namespace KylesUnityLib.Pooling
         {
             GameObject obj = GameObject.Instantiate(_template);
             obj.SetActive(false);
-            var identifier = obj.AddComponent<PoolIdentifier>();
+            PoolIdentifier identifier = obj.AddComponent<PoolIdentifier>();
 
-            //divide by 64
-            int chunkIndex = _poolCount >> 6;
-            //Fast Mod bitshift
-            ulong bitMask = (1UL << (_poolCount & 63));
-            identifier.SetIdentifier(chunkIndex, bitMask);
-            if (setActive)
-            {
-                objMask[chunkIndex] &= ~bitMask;
-            }
-            else
-            {
-                objMask[chunkIndex] |= bitMask;
-                chunkMask |= 1UL << chunkIndex;
-            }
 
             if (AddToPool(identifier))
             {
+                //divide by 64
+                int chunkIndex = _poolCount >> 6;
+                //Fast Mod bitshift
+                ulong bitMask = (1UL << (_poolCount & 63));
+                identifier.SetIdentifier(chunkIndex, bitMask);
                 newIdent = identifier;
+                CreationAction?.Invoke(obj);
+                if (setActive)
+                {
+                    objMask[chunkIndex] &= ~bitMask;
+                }
+                else
+                {
+                    objMask[chunkIndex] |= bitMask;
+                    chunkMask |= 1UL << chunkIndex;
+                }
                 return true;
             }
 
             newIdent = null;
+            GameObject.Destroy(obj);
             return false;
         }
 
@@ -462,5 +462,26 @@ namespace KylesUnityLib.Pooling
             chunkMask = 0;
             return gameObjects;
         }
+
+        /// <summary>
+        /// Removes Creation actions for future object creations.<br/>
+        /// Be aware this means the pool will contain objects with mixed state unless you address this first.
+        /// </summary>
+        public void ClearCreationAction() => CreationAction = null;
+        /// <summary>
+        /// Changes the Creation action for future object creations.<br/>
+        /// Be aware this means the pool will contain objects with mixed state unless you address this first.
+        /// </summary>
+        public void SetCreationAction(Action<GameObject> onCreation) => CreationAction = onCreation;
+        /// <summary>
+        /// Adds an action to the Creation Actions for future object creations.<br/>
+        /// Be aware this means the pool will contain objects with mixed state unless you address this first.
+        /// </summary>
+        public void AddCreationAction(Action<GameObject> onCreation) => CreationAction += onCreation;
+        /// <summary>
+        /// Removes an action from the Creation action for future object creations.<br/>
+        /// Be aware this means the pool will contain objects with mixed state unless you address this first.
+        /// </summary>
+        public void RemoveCreationAction(Action<GameObject> onCreation) => CreationAction -= onCreation;
     }
 }
