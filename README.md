@@ -135,24 +135,6 @@ Key performance characteristics:
   Returning objects to the pool is a lightweight flag operation, with optional
   callbacks for custom cleanup logic.
 
-Requirements
-------------
-- Unity 2022.3 or later recommended  
-  (The pooler uses only mature APIs such as GameObject, Instantiate, Destroy, and GetComponent,
-   so it should work on most Unity versions.)
-
-- .NET Framework 4.7.2  
-  Required for building the DLL in Visual Studio.
-
-- NuGet Dependencies (for DLL builds only):
-  - System.Memory
-  - System.Buffers
-  - System.Runtime.CompilerServices.Unsafe
-
-These dependencies are required only when building the DLL externally.
-They are **not** required when using the source files directly inside a Unity project,
-as Unity provides its own implementations of these APIs.
-
 Limitations
 -----------
 - A single **GameObjectPool** can hold a maximum of 4096 objects.  
