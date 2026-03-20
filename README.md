@@ -49,8 +49,10 @@ Example Usage
    class Example : MonoBehaviour{
      IPoolable pooled;
       int health = 100;
-     Start()
+     OnEnable()
      {
+         if(pooled != null) return;
+   
          if(gameObject.TryGetComponent(out pooled))
          {
            pooled.onReturn += InjectedLogic;
