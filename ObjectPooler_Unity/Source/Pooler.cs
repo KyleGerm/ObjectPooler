@@ -9,7 +9,7 @@ namespace KylesUnityLib.Pooling
     /// Enums used in this Pooler should always start with a value of 0 and increase in value by 1
     /// </summary>
     /// <typeparam name="T">Type of enum to be used in this pool class</typeparam>
-    public class Pooler<T> : IPoolingAbstractor where T : Enum
+    public class Pooler<T> where T : Enum
     {
         private GameObjectPool[] _poolArr;
 
@@ -35,7 +35,7 @@ namespace KylesUnityLib.Pooling
         /// <param name="prefabType">Which Pool to search</param>
         /// <param name="resizable">Can a new GameObject be created if none can be found?</param>
         /// <returns></returns>
-        public IPoolable GetNewObject(T prefabType, bool resizable) => this[prefabType].GetObject(resizable);
+        public IPoolable GetObject(T prefabType, bool resizable) => this[prefabType].GetObject(resizable);
 
 
         /// <summary>

@@ -9,7 +9,7 @@ namespace KylesUnityLib.Pooling
     {
         private bool _active;
         private PoolIdentifier[] _pool;
-        int _poolCount;
+        private int _poolCount;
         private GameObject _template;
         private ulong[] objMask;
         private ulong chunkMask;

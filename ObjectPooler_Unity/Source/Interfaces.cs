@@ -23,19 +23,4 @@ namespace KylesUnityLib.Pooling
         GameObject gameObject { get; }
     }
 
-    /// <summary>
-    /// Non Generic methods for the Pooler classes 
-    /// </summary>
-    internal interface IPoolingAbstractor
-    {
-
-        /// <summary>
-        /// Returns Everything in all pools
-        /// </summary>
-        void ReturnAll();
-        /// <summary>
-        /// Checks through each pool, and removes any invalid values 
-        /// </summary>
-        void Validate();
-    }
 }
