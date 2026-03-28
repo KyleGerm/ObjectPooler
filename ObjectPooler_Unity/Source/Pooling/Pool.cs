@@ -1,8 +1,6 @@
 ﻿using KylesUnityLib.Factory;
 using KylesUnityLib.Internal.Pooling;
 using System;
-using System.Buffers;
-using System.Linq;
 using System.Runtime.CompilerServices;
 
 
@@ -12,7 +10,7 @@ namespace KylesUnityLib.Pooling
     /// Base Pool. Can hold any class object
     /// </summary>
     /// <typeparam name="T">Type of object to be pooled</typeparam>
-    public  class Pool<T> where T : class 
+    public  class Pool<T> where T : class ,IInjectable<T>
     {
         private bool _active;
         private PoolIdentifier<T>[] _pool;
@@ -33,7 +31,7 @@ namespace KylesUnityLib.Pooling
         /// </summary>
         public bool Active => _active;
         private readonly Factory<T> _factory;
-
+       
         /// <summary>
         /// Creates an uninitialized Pool object<br/>
         /// <see cref="GenerateList(int)"/> Must be called before the pool will be usable and active
@@ -281,7 +279,6 @@ namespace KylesUnityLib.Pooling
                 throw new NullObjectConstructionException($"{_factory.GetType().Name} returned null when creating {typeof(T).Name}.\nInspect and fix the construction method supplied.");
             }
             PoolIdentifier<T> identifier = new PoolIdentifier<T>(obj);
-
             if (AddToPool(identifier, out int index))
             {
                 //divide by 64

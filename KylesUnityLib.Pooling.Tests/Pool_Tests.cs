@@ -340,7 +340,7 @@ namespace KylesUnityLib.Pooling.Tests
         public void PoolObjMask_And_ChunkMask_AreSynchronisedCorrectly()
         {
             //Accesses _chunkMask member variable of Pool
-           static ulong GetChunkMask<T>(Pool<T> pool) where T : class
+           static ulong GetChunkMask<T>(Pool<T> pool) where T : class ,IInjectable<T>
             {
                 var field = typeof(Pool<T>)
                     .GetField("_chunkMask", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -348,7 +348,7 @@ namespace KylesUnityLib.Pooling.Tests
                 return (ulong)field!.GetValue(pool)!;
             }
             //Accesses _bitMask member variable of Pool
-            static ulong[] GetObjMask<T>(Pool<T> pool) where T : class
+            static ulong[] GetObjMask<T>(Pool<T> pool) where T : class ,IInjectable<T>
             {
                 var field = typeof(Pool<T>)
                     .GetField("_objMask", BindingFlags.NonPublic | BindingFlags.Instance);

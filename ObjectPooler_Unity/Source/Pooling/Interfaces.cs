@@ -47,6 +47,10 @@ namespace KylesUnityLib.Pooling
         T Entity { get; }
     }
 
+    public interface IInjectable<T>
+    {
+        void InjectPoolable(IPoolable<T> poolable);
+    }
    
 
 }

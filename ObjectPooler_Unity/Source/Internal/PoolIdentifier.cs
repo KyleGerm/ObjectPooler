@@ -40,7 +40,7 @@ namespace KylesUnityLib.Internal.Pooling
     }
 
 
-    internal class PoolIdentifier<T> : IPoolable<T>  where T : class 
+    internal class PoolIdentifier<T> : IPoolable<T>  where T : class , IInjectable<T>
     {
         internal int ChunkIndex { get; private set; }
         internal ulong BitMask { get; private set; }
@@ -52,6 +52,7 @@ namespace KylesUnityLib.Internal.Pooling
         internal PoolIdentifier(T pooledObj)
         {
             Entity = pooledObj;
+            ((IInjectable<T>)pooledObj).InjectPoolable(this);
         }
 
         public void ReturnToPool()
