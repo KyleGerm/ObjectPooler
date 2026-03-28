@@ -17,7 +17,6 @@ namespace KylesUnityLib
             50, 31, 19, 15, 30, 14, 13, 12
         };
 
-
         public static int TrailingZeroCount(ulong value)
         {
             if (value == 0)

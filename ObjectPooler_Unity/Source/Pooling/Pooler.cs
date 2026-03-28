@@ -17,9 +17,12 @@ namespace KylesUnityLib.Pooling
         /// The Pool which will be accessed the most.
         /// Defaults to the first value of the enum
         /// </summary>
-        public GameObjectPool HotPath { get; private set; }
+        public GameObjectPool? HotPath { get; private set; }
 
         private GameObjectPool this[T type] => _poolArr[Convert.ToInt32(type)];
+        /// <summary>
+        /// Creates a Pooler using T, and creates an empty pool for each value of T
+        /// </summary>
         public Pooler()
         {
             int enumLength = Enum.GetValues(typeof(T)).Length;
@@ -92,7 +95,9 @@ namespace KylesUnityLib.Pooling
         /// <param name="listType"></param>
         /// <param name="obj"></param>
         /// <param name="size"></param>
-        public void GenerateList(T listType, in GameObject obj, int size,int maxSize ,Action<GameObject> action = null) => _poolArr[Convert.ToInt32(listType)] = GameObjectPool.Create(obj,size, maxSize,action);
+        /// <param name="maxSize"></param>
+        /// <param name="action"></param>
+        public void GenerateList(T listType, in GameObject obj, int size,int maxSize ,Action<GameObject> action = null!) => _poolArr[Convert.ToInt32(listType)] = GameObjectPool.Create(obj,size, maxSize,action);
 
 
         /// <summary>
@@ -105,7 +110,8 @@ namespace KylesUnityLib.Pooling
         /// Destroys all GameObjects in the list, and Removes the list from the Pool
         /// </summary>
         /// <param name="listType"></param>
-        public void DestroyList(T listType, Action<GameObject> action = null) => this[listType].DestroyList(action);
+        /// <param name="action"></param>
+        public void DestroyList(T listType, Action<GameObject> action = null!) => this[listType].DestroyList(action);
 
         /// <summary>
         /// Removes the Pool from the list, and hands back the objects
@@ -124,7 +130,9 @@ namespace KylesUnityLib.Pooling
                 _poolArr[i].Validate();
             }
         }
-
+        /// <summary>
+        /// Return every object in each pool back to the pool
+        /// </summary>
         public void ReturnAll()
         {
            foreach(var pool in _poolArr)
@@ -133,8 +141,16 @@ namespace KylesUnityLib.Pooling
             }
         }
 
+        /// <summary>
+        /// Sets <see cref="HotPath"/> to the Pool contained at <typeparamref name="T"/>.value
+        /// </summary>
+        /// <param name="enumType"></param>
         public void SetHotPath(T enumType) => HotPath = this[enumType];
-
+        /// <summary>
+        /// Retrieves the numboer of objects in the pool contained at <typeparamref name="T"/>.value
+        /// </summary>
+        /// <param name="enumType"></param>
+        /// <returns></returns>
         public int SizeOfPool(T enumType) => this[enumType].SizeOfPool;
 
         /// <summary>
