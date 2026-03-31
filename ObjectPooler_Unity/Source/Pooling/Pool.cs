@@ -30,7 +30,8 @@ namespace KylesUnityLib.Pooling
         /// Determines if the pool is in a usable state
         /// </summary>
         public bool Active => _active;
-        private readonly Factory<T> _factory;
+        private readonly IFactory<T> _factory;
+        public IFactory<T> Factory => _factory;
        
         /// <summary>
         /// Creates an uninitialized Pool object<br/>
@@ -39,10 +40,11 @@ namespace KylesUnityLib.Pooling
         /// <param name="maxSize">The max size of the pool. Cannot be changed after creation</param>
         /// <param name="factory">Is used to create pooled objects</param>
         /// <exception cref="ArgumentNullException"></exception>
-        public Pool(int maxSize, Factory<T> factory)
+        public Pool(int maxSize, IFactory<T> factory)
         {
             CheckMaxSizeArgument(maxSize, nameof(maxSize));
-            if (factory == null) throw new ArgumentNullException(typeof(IFactory<T>).FullName, "Factory is null. Define a valid factory and try again");
+            if (factory == null) throw new ArgumentNullException(typeof(Factory<T>).FullName, "Factory is null. Define a valid factory and try again");
+            factory.ValidateFactory();
             MaxSize = maxSize;
             _objMask = new ulong[(MaxSize + 63) / 64];
             _factory = factory;
@@ -65,7 +67,7 @@ namespace KylesUnityLib.Pooling
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">Ensures factory is not null</exception>
         /// <exception cref="PoolInitializationException">Throws if pool did not initialize as expected</exception>
-        public static Pool<T> Create(Factory<T> factory, int size, int maxSize)
+        public static Pool<T> Create(IFactory<T> factory, int size, int maxSize)
         {
             #region Validation
             if (factory == null) throw new ArgumentNullException(typeof(IFactory<T>).FullName, "Factory is null. Define a valid factory and try again");

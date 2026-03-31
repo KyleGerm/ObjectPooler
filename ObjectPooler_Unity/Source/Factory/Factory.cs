@@ -21,7 +21,7 @@ namespace KylesUnityLib.Factory
     /// </summary>
     /// <typeparam name="T"></typeparam>
 
-    public class Factory<T> : IFactory<T>,IFactorySetup<T> where T : class
+    public class Factory<T> : IFactory<T> where T : class
     {
         /// <summary>
         /// Delegate for object creation
@@ -36,7 +36,7 @@ namespace KylesUnityLib.Factory
         /// </summary>
         /// <param name="creationMethod"></param>
         public Factory(FactoryCreationMethod<T> creationMethod)
-        { 
+        {
             _creationAction = creationMethod;
         }
 
@@ -54,7 +54,7 @@ namespace KylesUnityLib.Factory
         }
         
         /// <inheritdoc />
-       public virtual void DefineCleanupAction(FactoryCleanupMethod<T> factoryCleanupMethod) => _cleanupAction = factoryCleanupMethod;
+       public virtual void DefineCleanup(FactoryCleanupMethod<T> factoryCleanupMethod) => _cleanupAction = factoryCleanupMethod;
 
         /// <summary>
         /// Validates the creation action exists and is not null. Throws <see cref="ArgumentNullException"/> if not valid
@@ -65,4 +65,5 @@ namespace KylesUnityLib.Factory
             if (_creationAction == null) throw new ArgumentNullException(GetType().Name, "Factory creation method is not defined. Define a creation instruction by calling IFactoy.DefineCreationMethod and supplying a valid instruction");
         }
     }
+
 }
