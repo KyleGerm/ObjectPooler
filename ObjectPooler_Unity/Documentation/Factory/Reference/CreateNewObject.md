@@ -18,5 +18,6 @@ If you are unsure whether the creation method is valid, you should either:
 Note that the default implementation of ValidateFactory can only confirm that the factory has a creation method. 
 It cannot verify that the objects produced by CreateNewObject are valid or usable.
 
+Next -> [**DisposeObject( T )**](DisposeObject.md) 
 
 [**Back to Reference**](..\Reference.md) 

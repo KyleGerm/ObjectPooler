@@ -115,4 +115,6 @@ the creation logic discoverable and self‑documenting, especially in larger sys
 The constructor will call [ValidateFactory](Validate.md) after assigning the given delegate to the factory.  
 If the delegate is null, this will cause an ArgumentNullException to be thrown.
 
+Next -> [**CreateNewObject()**](CreateNewObject.md)
+
 [**Back to Reference**](..\Reference.md) 

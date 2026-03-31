@@ -17,4 +17,6 @@ myFactory.DefineCreation(() => new MyClass());
 ```
 DefineClass can be supplied with a creation method in the same way as [creating the Factory](Construction.md).  
 
+Next -> [**DefineCleanup( FactoryCleanUpMethod\<T> )**](DefineCleanup.md) 
+
 [**Back to Reference**](..\Reference.md) 

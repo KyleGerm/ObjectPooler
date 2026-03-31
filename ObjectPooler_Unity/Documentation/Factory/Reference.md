@@ -14,4 +14,4 @@ Click on the links to lean more.
 - [**DefineCleanup( FactoryCleanUpMethod\<T> )**](Reference\DefineCleanup.md) 
 - [**ValidateFactory()**](Reference\Validate.md) 
 
-Next -> [**Inheriting Factory\<T>**]() 
+Next -> [**Factory\<T>( FactoryCreationMethod\<T> )**](Reference\Construction.md) 

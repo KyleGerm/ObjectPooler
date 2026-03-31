@@ -23,4 +23,6 @@ myFactory.DisposeObject(instance);
 Use DisposeObject when you are ready to release any references held by the object so that the 
 garbage collector can reclaim it safely once it becomes unreachable.  
 
+Next -> [**DefineCreation( FactoryCreationMethod\<T> )**](DefineCreation.md) 
+
 [**Back to Reference**](..\Reference.md) 

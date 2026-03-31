@@ -49,9 +49,10 @@ dangling references or unintended retention of shared objects:
 Using cleanup as a preventative measure, even when not strictly required, 
 reduces the risk of memory leaks, stale references, unnecessary memory retention, 
 and long‑term performance degradation.  
-To be clear, the factory does not *destroy** the object.  
+To be clear, the factory does not *destroy* the object.  
 The factory only performs the cleanup necessary for the garbage collector to safely 
 reclaim the object when it becomes unreachable.
 
+Next -> [**ValidateFactory()**](Validate.md) 
 
 [**Back to Reference**](..\Reference.md) 

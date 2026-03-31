@@ -62,7 +62,7 @@ namespace KylesUnityLib.Factory
         /// <exception cref="ArgumentNullException"></exception>
         public virtual void ValidateFactory()
         {
-            if (_creationAction == null) throw new ArgumentNullException(GetType().Name, "Factory creation method is not defined. Define a creation instruction by calling IFactoy.DefineCreationMethod and supplying a valid instruction");
+            if (_creationAction == null) throw new ArgumentNullException(GetType().Name, "Factory creation method is not defined. Define a creation instruction by calling IFactory.DefineCreationMethod and supplying a valid instruction");
         }
     }
 

@@ -35,4 +35,6 @@
  overriden, ValidateFactory should be defined appropriately to ensure the factory is in a valid 
  state.  
    
+Next -> [Inheriting Factory\<T>](InheritingFactory.md)
+
  [**Back to Reference**](..\Reference.md) 
