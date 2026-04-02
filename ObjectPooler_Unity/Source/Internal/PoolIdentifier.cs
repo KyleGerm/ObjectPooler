@@ -1,5 +1,6 @@
 ﻿
 using JetBrains.Annotations;
+using KylesUnityLib.Factory;
 using KylesUnityLib.Pooling;
 using System;
 using UnityEngine;
@@ -49,17 +50,23 @@ namespace KylesUnityLib.Internal.Pooling
 
         public event Action? OnReturn;
         internal event Action<PoolIdentifier<T>>? notifyPool = null!;
+        private FactoryCleanupMethod<T> _cleanupMethod;
+        private Action _returnMethod;
         internal PoolIdentifier(T pooledObj)
         {
             Entity = pooledObj;
             ((IInjectable<T>)pooledObj).InjectPoolable(this);
+            _returnMethod = StandardReturn;
         }
-
-        public void ReturnToPool()
+        private void StandardReturn()
         {
             OnReturn?.Invoke();
             notifyPool?.Invoke(this);
             notifyPool = null;
+        }
+        public void ReturnToPool()
+        {
+            _returnMethod?.Invoke();
         }
         internal void SetIdentifier(int chunkIndex, ulong bitMask)
         {
@@ -77,6 +84,19 @@ namespace KylesUnityLib.Internal.Pooling
         {
             Entity = null!;
             ClearEvents();
+        }
+        private void DisposalReturn()
+        {
+            var obj = Entity;
+            Entity = null!;
+            _cleanupMethod?.Invoke(obj);
+            Dispose();
+        }
+
+        internal void PrepareForDisposal(FactoryCleanupMethod<T> cleanup)
+        {
+            _cleanupMethod = cleanup;
+            _returnMethod = DisposalReturn;
         }
     }
 

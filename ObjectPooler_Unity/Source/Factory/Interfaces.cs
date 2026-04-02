@@ -8,7 +8,6 @@ namespace KylesUnityLib.Factory
         /// <typeparam name="T"></typeparam>
         public interface IFactory<T>
         {
-
             /// <summary>
             /// Construct a new object with the creation method given
             /// </summary>

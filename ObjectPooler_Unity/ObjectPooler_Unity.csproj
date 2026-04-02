@@ -32,6 +32,7 @@
 
 	<ItemGroup>
 	  <Folder Include="Documentation\Overview\" />
+	  <Folder Include="Documentation\Pool\Reference\" />
 	</ItemGroup>
 	
 

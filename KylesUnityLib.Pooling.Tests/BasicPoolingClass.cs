@@ -10,7 +10,7 @@ namespace KylesUnityLib.Pooling.Tests
 
         public void InjectPoolable(IPoolable<BasicPoolingClass> poolable)
         {
-            
+            poolable.OnReturn += () => Value = 0;
         }
     }
 }

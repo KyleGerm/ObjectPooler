@@ -1,6 +1,7 @@
 ﻿using KylesUnityLib.Factory;
 using KylesUnityLib.Internal.Pooling;
 using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 
@@ -12,6 +13,7 @@ namespace KylesUnityLib.Pooling
     /// <typeparam name="T">Type of object to be pooled</typeparam>
     public  class Pool<T> where T : class ,IInjectable<T>
     {
+        private bool _disposed;
         private bool _active;
         private PoolIdentifier<T>[] _pool;
         private int _poolCount;
@@ -97,7 +99,7 @@ namespace KylesUnityLib.Pooling
         /// <exception cref="ActivePoolOverwriteException"></exception>
         public bool GenerateList(int size)
         {
-            if (_active)
+            if (_active || _disposed)
             {
                 throw new ActivePoolOverwriteException("Pooler is already in use, and has objects. Either destroy the pool using DestroyList(), or take ownership of the objects using RemoveListButDontDestroy()");
             }
@@ -472,5 +474,39 @@ namespace KylesUnityLib.Pooling
                 throw new ArgumentOutOfRangeException(valueName, "Max Size of the pool must be a value more than zero and less than 4096.");
             }
         }
+        /// <summary>
+        /// Closes down the pool, Calls disposal on all inactive objects, 
+        /// delegates disposal to active objects, and prepares for Garbage Collection. <br/>
+        /// POOL CANNOT BE USED AFTER THIS IS CALLED 
+        /// </summary>
+        public void ShutDownPool()
+        {
+            if(_disposed) return;
+
+            for (int i = 0; i < _poolCount; ++i)
+            {
+                // Check whether the bit for object i is set to 1 in the mask.
+
+                bool isInactive = (_objMask[(int)i / 64] & (1UL << (i & 63))) != 0;
+
+                if (isInactive)
+                {
+                    _factory.DisposeObject(_pool[i].Entity);
+                    _pool[i].Dispose();
+                }
+                else
+                {
+                    _pool[i].PrepareForDisposal(_factory.DisposeObject);
+                }
+            }
+
+            _chunkMask = 0;
+            Array.Clear(_objMask, 0, _objMask.Length);
+            _poolCount = 0;
+            _pool = null!;
+            _disposed = true;
+            _active = false;
+        }
     }
+    //TODO: Create tests to verify Shutdown works
 }
