@@ -12,7 +12,7 @@ namespace KylesUnityLib.Internal.Pooling
 
         internal int ChunkIndex { get; private set; }
         internal ulong BitMask { get; private set; }
-        public event Action OnReturn = null!;
+       public event Action OnReturn = null!;
         internal event Action<PoolIdentifier> notifyPool = null!;
         public GameObject GameObject => gameObject;
         public void ReturnToPool()
@@ -41,7 +41,7 @@ namespace KylesUnityLib.Internal.Pooling
     }
 
 
-    internal class PoolIdentifier<T> : IPoolable<T>  where T : class , IInjectable<T>
+    internal class PoolIdentifier<T> : IPooledObject<T>  where T : class , IPoolable<T>
     {
         internal int ChunkIndex { get; private set; }
         internal ulong BitMask { get; private set; }
@@ -55,7 +55,7 @@ namespace KylesUnityLib.Internal.Pooling
         internal PoolIdentifier(T pooledObj)
         {
             Entity = pooledObj;
-            ((IInjectable<T>)pooledObj).InjectPoolable(this);
+            pooledObj.InjectPoolable(this);
             _returnMethod = StandardReturn;
         }
         private void StandardReturn()

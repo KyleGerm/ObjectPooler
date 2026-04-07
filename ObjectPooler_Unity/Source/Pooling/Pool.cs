@@ -11,7 +11,7 @@ namespace KylesUnityLib.Pooling
     /// Base Pool. Can hold any class object
     /// </summary>
     /// <typeparam name="T">Type of object to be pooled</typeparam>
-    public  class Pool<T> where T : class ,IInjectable<T>
+    public  class Pool<T> where T : class ,IPoolable<T>
     {
         private bool _disposed;
         private bool _active;
@@ -129,31 +129,31 @@ namespace KylesUnityLib.Pooling
 
         
         /// <summary>
-        /// Returns a single available IPoolable
+        /// Returns a single available IPooledObject
         /// </summary>
-        /// <param name="resizable">Can a new GameObject be created if none can be found?</param>
-        /// <returns>Available IPoolable, or null if none can be found</returns>
-        public IPoolable<T> GetObject(bool resizable = false)
+        /// <param name="resizeable">Can a new GameObject be created if none can be found?</param>
+        /// <returns>Available IPooledObject, or null if none can be found</returns>
+        public IPooledObject<T> GetObject(bool resizeable = false)
         {
             if (!_active) throw new PoolIsInactiveException("Pool is inactive or not in a usable state. Check Pool Setup before calling GetObject");
 
-            if (_chunkMask != 0 && GetNextAvailable(DeBruijn.TrailingZeroCount(_chunkMask)) is IPoolable<T> obj)
+            if (_chunkMask != 0 && GetNextAvailable(DeBruijn.TrailingZeroCount(_chunkMask)) is IPooledObject<T> obj)
                 return obj;
 
-            if (resizable && CreateNewPooledObject(true, out IPoolable<T> newObj))
+            if (resizeable && CreateNewPooledObject(true, out IPooledObject<T> newObj))
                 return newObj;
 
             throw new PoolExhaustedException("Pool is exhausted and resizing is not allowed. Ensure pool size is suitable for object request frequency, or that resizing is enabled.");
         }
 
         /// <summary>
-        /// Attempts to return a single IPoolable
+        /// Attempts to return a single IPooledObject
         /// </summary>
         /// <param name="obj"></param>
         /// <param name="resizeable"></param>
         /// <returns>False if pool is exhausted, or the pool is inactive<br/>
         /// True if an object is found</returns>
-        public bool TryGetObject(out IPoolable<T> obj, bool resizeable = false)
+        public bool TryGetObject(out IPooledObject<T> obj, bool resizeable = false)
         {
             if (!_active)
             {
@@ -173,21 +173,21 @@ namespace KylesUnityLib.Pooling
         }
 
         /// <summary>
-        /// Returns an array of IPoolable.
+        /// Returns an array of IPooledObject.
         /// If the specified amount cannot be created, returns null.
         /// 
-        /// <para>⚠️ This method allocates memory. Prefer <see cref="RequestMultiple(bool, ref IPoolable{T}[])"/> for zero-allocation usage.</para>
+        /// <para>⚠️ This method allocates memory. Prefer <see cref="RequestMultiple(bool, ref IPooledObject{T}[])"/> for zero-allocation usage.</para>
         ///</summary>
-        /// <param name="amount">Number of IPoolable to return</param>
+        /// <param name="amount">Number of IPooledObject to return</param>
         /// <param name="resizable">Can more objects be made to return the amount specified?</param>
         /// <returns></returns>
-        public IPoolable<T>[] RequestMultiple(int amount, bool resizable)
+        public IPooledObject<T>[] RequestMultiple(int amount, bool resizable = false)
         {
-            IPoolable<T>[] list = new IPoolable<T>[amount];
+            IPooledObject<T>[] list = new IPooledObject<T>[amount];
 
             if (!_active) throw new PoolIsInactiveException("Pool is inactive or not in a usable state. Check Pool Setup before calling RequestMultiple");
 
-            if(RequestMultiple(resizable,ref list))
+            if(RequestMultiple(ref list, resizable))
             {
                 return list;
             }
@@ -196,7 +196,7 @@ namespace KylesUnityLib.Pooling
         }
 
         /// <summary>
-        /// <para>Fills the array with IPoolable objects. Returns true if the array was successfully populated. Zero Allocation</para>
+        /// <para>Fills the array with IPooledObject objects. Returns true if the array was successfully populated. Zero Allocation</para>
         /// <para>The array will still be partially populated even if false is returned. 
         /// Null checks should be used if false is returned, and the array was empty when passed in</para>
         /// </summary>
@@ -204,7 +204,7 @@ namespace KylesUnityLib.Pooling
         /// <para>Allocation will happen if true, and new instances are created</para></param>
         /// <param name="buffer">The buffer given to populate</param>
         /// <returns></returns>
-        public bool RequestMultiple(bool resizable, ref IPoolable<T>[] buffer)
+        public bool RequestMultiple(ref IPooledObject<T>[] buffer, bool resizable = false)
         {
             int amount = buffer.Length;
             int populatedSlots = 0;
@@ -214,7 +214,7 @@ namespace KylesUnityLib.Pooling
 
                 if (populatedSlots < amount && resizable)
                 {
-                    while (populatedSlots < amount && _poolCount < MaxSize && CreateNewPooledObject(true, out IPoolable<T> obj))
+                    while (populatedSlots < amount && _poolCount < MaxSize && CreateNewPooledObject(true, out IPooledObject<T> obj))
                     {
                         buffer[populatedSlots++] = obj;
                     }
@@ -224,7 +224,7 @@ namespace KylesUnityLib.Pooling
             return populatedSlots == amount;
         }
 
-        private int PopulateBuffer(Span<IPoolable<T>> span)
+        private int PopulateBuffer(Span<IPooledObject<T>> span)
         {
             int count = 0;
             int amount = span.Length;
@@ -245,7 +245,7 @@ namespace KylesUnityLib.Pooling
             return count;
         }
 
-        private IPoolable<T> GetNextAvailable(int availableChunk)
+        private IPooledObject<T> GetNextAvailable(int availableChunk)
         {
             if (_objMask[availableChunk] == 0) return null!;
 
@@ -268,14 +268,43 @@ namespace KylesUnityLib.Pooling
         /// </summary>
         public void ReturnAll()
         {
-            if (!_active) { return; }
+            if (!_active) return;
 
-            for (int i = 0; i < _poolCount; i++)
+            for (int block = 0; block < _objMask.Length; block++)
             {
-                _pool[i].ReturnToPool();
+                ulong mask = _objMask[block];
+
+                // Case 1: all inactive → skip
+                if (mask == ulong.MaxValue)
+                    continue;
+
+                // Case 2: all active → return all 64 quickly
+                if (mask == 0)
+                {
+                    int start = block * 64;
+                    int count = Math.Min(64, _poolCount - start);
+
+                    for (int i = 0; i < count; i++)
+                        _pool[start + i].ReturnToPool();
+
+                    continue;
+                }
+
+                // Case 3: mixed bits → check each bit
+                for (int bit = 0; bit < 64; bit++)
+                {
+                    int index = block * 64 + bit;
+                    if (index >= _poolCount)
+                        return;
+
+                    bool isActive = (mask & (1UL << bit)) == 0;
+                    if (isActive)
+                        _pool[index].ReturnToPool();
+                }
             }
         }
-        private bool CreateNewPooledObject(bool setActive, out IPoolable<T> newIdent)
+
+        private bool CreateNewPooledObject(bool setActive, out IPooledObject<T> newIdent)
         {
             T obj = _factory.CreateNewObject();
             if (obj == null) 

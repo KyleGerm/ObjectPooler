@@ -30,7 +30,7 @@ namespace KylesUnityLib.Pooling
     /// <summary>
     /// Qualifies the class to be part of a pool 
     /// </summary>
-    public interface IPoolable<T>
+    public interface IPooledObject<T>
     {
         /// <summary>
         /// OnReturn is run when the object is returned to the pool. Use this to add object specific return behaviour
@@ -47,9 +47,14 @@ namespace KylesUnityLib.Pooling
         T Entity { get; }
     }
 
-    public interface IInjectable<T>
+    public interface IPoolable<T>
     {
-        void InjectPoolable(IPoolable<T> poolable);
+        /// <summary>
+        /// Allows the <see cref="IPooledObject{T}"/> to inject itself into its <see cref="T"/> instance.<br/>
+        /// This allows <see cref="T"/> to access the wrapper and add behaviours to it
+        /// </summary>
+        /// <param name="poolable"></param>
+        void InjectPoolable(IPooledObject<T> poolable);
     }
    
 
