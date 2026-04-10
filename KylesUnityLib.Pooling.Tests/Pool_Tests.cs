@@ -285,8 +285,23 @@ namespace KylesUnityLib.Pooling.Tests
         }
 
         [Fact]
-        public void ValidateCanRepairBrokenElements()
+        public void ReplaceInvalidCanRepairBrokenElements()
         {
+            static ulong GetChunkMask<T>(Pool<T> pool) where T : class, IPoolable<T>
+            {
+                var field = typeof(Pool<T>)
+                    .GetField("_chunkMask", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                return (ulong)field!.GetValue(pool)!;
+            }
+            //Accesses _bitMask member variable of Pool
+            static ulong[] GetObjMask<T>(Pool<T> pool) where T : class, IPoolable<T>
+            {
+                var field = typeof(Pool<T>)
+                    .GetField("_objMask", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                return (ulong[])field!.GetValue(pool)!;
+            }
             Factory<BasicPoolingClass> fac = new(() => new());
             Pool<BasicPoolingClass> pool = Pool<BasicPoolingClass>.Create(fac, 50, 50);
             var pooled = pool.RequestMultiple(50, false);
@@ -296,8 +311,10 @@ namespace KylesUnityLib.Pooling.Tests
                 Assert.Null(item.Entity);
             }
             pool.ReturnAll();
-            pool.Validate();
-            pooled = pool.RequestMultiple(50, false);
+            pool.ReplaceInvalid();
+            Assert.Equal(1U, GetChunkMask(pool));
+            Assert.Equal(0x003FFFFFFFFFFFFUL, GetObjMask(pool)[0]);
+;            pooled = pool.RequestMultiple(50, false);
             foreach (var item in pooled)
             {
                 Assert.NotNull(item.Entity);
@@ -496,6 +513,119 @@ namespace KylesUnityLib.Pooling.Tests
             pool.Reduce(-5);
             Assert.True(pool.Active);
             Assert.Equal(10,pool.SizeOfPool);
+        }
+
+        [Fact]
+        public void RemoveInvalidWorksProperly()
+        {
+            static ulong GetChunkMask<T>(Pool<T> pool) where T : class, IPoolable<T>
+            {
+                var field = typeof(Pool<T>)
+                    .GetField("_chunkMask", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                return (ulong)field!.GetValue(pool)!;
+            }
+            //Accesses _bitMask member variable of Pool
+            static ulong[] GetObjMask<T>(Pool<T> pool) where T : class, IPoolable<T>
+            {
+                var field = typeof(Pool<T>)
+                    .GetField("_objMask", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                return (ulong[])field!.GetValue(pool)!;
+            }
+            Factory<BasicPoolingClass> fac = new(() => new());
+            Pool<BasicPoolingClass> pool = Pool<BasicPoolingClass>.Create(fac, 10,20);
+            Assert.Equal(10, pool.SizeOfPool);
+            var pooled = pool.RequestMultiple(10);
+            for(int i = 0; i < pooled.Length; i++)
+            {
+                pooled[i].ReturnToPool();
+                if (i % 2  == 0)
+                {
+                    ((PoolIdentifier<BasicPoolingClass>)pooled[i]).Dispose();
+                }
+            }
+            pool.RemoveInvalid();
+            Assert.Equal(5, pool.SizeOfPool);
+            Assert.Equal(1U, GetChunkMask(pool));
+            Assert.Equal((ulong)31, GetObjMask(pool)[0]);
+            pooled = pool.RequestMultiple(5);
+            foreach(var item  in pooled)
+            {
+                Assert.NotNull(item);
+                Assert.NotNull(item.Entity);
+                item.ReturnToPool();
+            }
+           
+        }
+
+        [Fact]
+        public void RemoveInvalidWillClosePool_IfZeroRemain()
+        {
+            static ulong GetChunkMask<T>(Pool<T> pool) where T : class, IPoolable<T>
+            {
+                var field = typeof(Pool<T>)
+                    .GetField("_chunkMask", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                return (ulong)field!.GetValue(pool)!;
+            }
+            //Accesses _bitMask member variable of Pool
+            static ulong[] GetObjMask<T>(Pool<T> pool) where T : class, IPoolable<T>
+            {
+                var field = typeof(Pool<T>)
+                    .GetField("_objMask", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                return (ulong[])field!.GetValue(pool)!;
+            }
+
+            Factory<BasicPoolingClass> fac = new(() => new());
+            Pool<BasicPoolingClass> pool = Pool<BasicPoolingClass>.Create(fac, 100, 101);
+            Assert.Equal(100, pool.SizeOfPool);
+            var pooled = pool.RequestMultiple(100);
+            pooled.ReturnAll();
+            for (int i = 0; i < pooled.Length; i++)
+            {
+                ((PoolIdentifier<BasicPoolingClass>)pooled[i]).Dispose();
+            }
+            pool.RemoveInvalid();
+            Assert.Equal(0, pool.SizeOfPool);
+            Assert.Equal(0U, GetChunkMask(pool));
+            Assert.Equal(0U, GetObjMask(pool)[0]);
+            Assert.False(pool.Active);
+            Assert.Throws<PoolIsInactiveException>(() => pool.GetObject());
+        }
+
+        [Fact]
+        public void ShutDown_ClosesPool_Successfully()
+        {
+            //Set up
+            int cleanupsRun = 0;
+            Factory<BasicPoolingClass> fac = new(() => new());
+            //tracks when a cleanup is run
+            fac.DefineCleanup(_ => cleanupsRun++);
+            Pool<BasicPoolingClass> pool = Pool<BasicPoolingClass>.Create(fac, 100, 101);
+            //avoid side effects for later in the test
+            fac = null;
+            //verify size
+            Assert.Equal(100, pool.SizeOfPool);
+
+            //two pools for different return behaviours
+            IPooledObject<BasicPoolingClass>[] pooledToReturnBeforeShutdown = pool.RequestMultiple(50);
+            IPooledObject<BasicPoolingClass>[] pooledToReturnAfterShutdown = pool.RequestMultiple(50);
+
+            //return while pool is alive
+            pooledToReturnBeforeShutdown.ReturnAll();
+            //Shut down the pool. 50 cleanups should be run immediately, and the pool should close
+            pool.ShutDownPool();
+            Assert.Equal(50, cleanupsRun);
+            Assert.False(pool.Active);
+
+            //release the pool for GC
+            pool = null;
+
+            //Return the final 50. Cleanup is deferred to the factory, so this should still run 
+            pooledToReturnAfterShutdown.ReturnAll();
+            Assert.Equal(100, cleanupsRun);
         }
     }
  }

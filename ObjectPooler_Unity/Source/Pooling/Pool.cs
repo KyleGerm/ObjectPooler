@@ -1,7 +1,6 @@
 ﻿using KylesUnityLib.Factory;
 using KylesUnityLib.Internal.Pooling;
 using System;
-using System.Linq;
 using System.Runtime.CompilerServices;
 
 
@@ -360,10 +359,9 @@ namespace KylesUnityLib.Pooling
         /// Resize the pool to a new size. Can increase or decrease in size.<br/>
         /// Pool will be destroyed if newSize is 0 or less.<br/>
         /// <para>⚠️ Performance Warning:<br/>
-        /// Increasing the pool size will instantiate new objects, which is expensive and 
-        /// can cause frame spikes if done during gameplay.<br/>Resize should be 
-        /// performed during warmup, loading screens, or spread over multiple frames if large growth 
-        /// is required.</para>
+        /// Increasing the pool size will create new objects using <see cref="IFactory{T}.CreateNewObject"/>.<br/>
+        /// The time it takes for this operation to complete is dependant on how many new objects are created, and the 
+        /// complexity of the object construction per object.</para>
         /// </summary>
         /// <param name="newSize">New size of pool. New Size will be clamped to Max Size given on creation</param>
         public void Resize(int newSize)
@@ -416,7 +414,7 @@ namespace KylesUnityLib.Pooling
         }
 
         /// <summary>
-        /// Destroys all GameObjects in the list<br/>
+        /// Destroys all objects in the pool<br/>
         /// Pool will be set to inactive until a new pool is generated
         /// </summary>
         /// <param name="action"></param>
@@ -442,21 +440,119 @@ namespace KylesUnityLib.Pooling
         /// <summary>
         /// Checks all elements in the pool are valid and replaces null values
         /// </summary>
-        public void Validate()
+        public void ReplaceInvalid()
         {
             if (!_active) return;
             if (SizeOfPool == 0)
             {
                 _active = false;
+                return;
             }
             for (int i = 0; i < SizeOfPool; i++)
             {
-                if (_pool[i] == null || _pool[i].Entity == null)
+                if (_pool[i] != null && _pool[i].Entity != null)
                 {
-                    InsertNewPooledObjectAt(i);
+                    continue;
                 }
+                bool wasAvailable = (_objMask[i >> 6] & (1UL << (i & 63))) != 0;
+                if (!wasAvailable)
+                {
+                    _pool[i]?.PrepareForDisposal(_factory.DisposeObject);
+                }
+                else
+                {
+                    _pool[i]?.Dispose();
+                }
+                    
+                InsertNewPooledObjectAt(i);
+
+                _objMask[i >> 6] |= (1UL << (i & 63));
+                _chunkMask |= 1U << (i >> 6);
+
             }
         }
+
+        /// <summary>
+        /// Removes any invalid objects in the pool, and shrinks the pool down to the new valid size.
+        /// </summary>
+        public void RemoveInvalid()
+        {
+            if (!_active) return;
+            if (_poolCount == 0)
+            {
+                _active = false;
+                return;
+            }
+
+            int i = 0;
+            while (i < _poolCount)
+            {
+                var wrapper = _pool[i];
+                // Check if invalid
+                if(wrapper != null && wrapper.Entity != null)
+                {
+                    i++;
+                    continue;
+                }
+                int last = _poolCount - 1;
+                int newIndex = i;
+               ref ulong maskChunkForNew = ref _objMask[newIndex >> 6];
+                ulong newObjMask = 1UL << (newIndex & 63);
+                bool elementToBeRemovedWasAvailable = (maskChunkForNew & newObjMask) != 0;
+                //chooses appropriate disposal if wrapper is not null
+                if (wrapper != null)
+                {
+                    if (!elementToBeRemovedWasAvailable)
+                        wrapper.PrepareForDisposal(_factory.DisposeObject);
+                    else
+                        wrapper.Dispose();
+                }
+                // Move last element into this slot
+        
+                var lastWrapper = _pool[last];
+                _poolCount--;
+                // If we just removed the last element, continue
+                if (i == last)
+                {
+                    _pool[i] = null!;
+                    _objMask[0] = 0;
+                    continue;
+                }
+                // Otherwise, move last element down
+                _pool[i] = lastWrapper;
+                _pool[last] = null!;
+                bool lastElementWasAvailable = (_objMask[last >> 6] & (1UL << (last & 63))) != 0;
+                //set the new bit to 1 or 0 based on if it was available
+                if (lastElementWasAvailable)
+                    maskChunkForNew |= newObjMask;
+                else
+                    maskChunkForNew &= ~newObjMask;
+
+                //set the last bit to 0
+                _objMask[last >> 6] &= ~(1UL << (last & 63));
+            }
+            _chunkMask = 0;
+            if (_poolCount == 0)
+            {
+                _active = false;
+                return;
+            }
+            for (int mask = 0; mask < _objMask.Length; mask++)
+            {
+                if (_objMask[mask] != 0)
+                {
+                    _chunkMask |= (1U << mask);
+                }
+            }
+            // Reassign identifiers
+            for (int j = 0; j < _poolCount; j++)
+            {
+                int chunkIndex = j >> 6;
+                ulong bitMask = 1UL << (j & 63);
+                _pool[j].SetIdentifier(chunkIndex, bitMask);
+            }
+        }
+
         private void InsertNewPooledObjectAt(int index)
         {
             
@@ -537,5 +633,4 @@ namespace KylesUnityLib.Pooling
             _active = false;
         }
     }
-    //TODO: Create tests to verify Shutdown works
 }
