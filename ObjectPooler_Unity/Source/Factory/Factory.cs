@@ -36,7 +36,7 @@ namespace KylesUnityLib.Factory
         /// </summary>
         /// <param name="creationMethod"></param>
         public Factory(FactoryCreationMethod<T> creationMethod)
-        {
+        { 
             _creationAction = creationMethod;
         }
 
