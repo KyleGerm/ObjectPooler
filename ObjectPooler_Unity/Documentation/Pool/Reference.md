@@ -5,7 +5,9 @@ Below are more detailed explanations on the public methods of Pool\<T>.
 Click on the links to lean more.
 
 **Pool\<T>**  
-~   where T : class , IPoolable\<T>
+~   where T : class , [`IPoolable<T>`](Reference/IPoolable.md)
+
+Returns: objects of [`IPooledObject<T>`](Reference/IPooledObject.md)
 
 Properties:
 -----------
