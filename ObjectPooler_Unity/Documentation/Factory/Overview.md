@@ -34,4 +34,6 @@ as some classes do not need explicit cleanup.
 
 More detailed instructions on how to use `Factory<T>` can be found in -> [Reference](Reference.md) 
 
+[Back to README](../../../README.md)
+
 
