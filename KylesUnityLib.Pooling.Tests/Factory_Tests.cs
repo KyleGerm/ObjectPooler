@@ -77,7 +77,7 @@ namespace KylesUnityLib.Pooling.Tests
             Factory<BasicPoolingClass> fac = new(() => new BasicPoolingClass() { Value = 10 });
             var test = fac.CreateNewObject();
             Assert.Equal(10, test.Value);
-            fac.DefineCleanupAction(obj => obj.Value = 0);
+            fac.DefineCleanup(obj => obj.Value = 0);
             fac.DisposeObject(test);
             Assert.Equal(0, test.Value);
         }
@@ -104,7 +104,7 @@ namespace KylesUnityLib.Pooling.Tests
             Factory<BasicPoolingClass> fac = new(() => new BasicPoolingClass() { Value = 10 });
             var test = fac.CreateNewObject();
             Assert.Equal(10, test.Value);
-            fac.DefineCleanupAction(obj => obj.Value = 0);
+            fac.DefineCleanup(obj => obj.Value = 0);
 
             //Assert
             fac.DisposeObject(test);
@@ -113,7 +113,7 @@ namespace KylesUnityLib.Pooling.Tests
             //Create new object, Define new cleanup
             var newObj = fac.CreateNewObject();
             test.LinkedClass = newObj;
-            fac.DefineCleanupAction(x => {
+            fac.DefineCleanup(x => {
                 x.Value = x.LinkedClass!.Value;
                 x.LinkedClass.Value = 0;
                 x.LinkedClass = null;
