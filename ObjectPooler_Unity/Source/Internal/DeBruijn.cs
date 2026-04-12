@@ -1,4 +1,6 @@
 ﻿
+using Microsoft.Win32.SafeHandles;
+
 namespace KylesUnityLib
 {
     internal static class DeBruijn
@@ -17,14 +19,15 @@ namespace KylesUnityLib
             50, 31, 19, 15, 30, 14, 13, 12
         };
 
-        public static int TrailingZeroCount(ulong value)
+        private static int _64 = 64;
+        public static  int TrailingZeroCount(ulong value)
         {
             if (value == 0)
-                return 64;
+                return  _64;
             
             ulong isolated = value & (~value + 1);
             ulong product = isolated * _DeBruijn64;
-            return DeBruijnIndex64[product >> 58];
+            return  DeBruijnIndex64[product >> 58];
 
         }
     }
