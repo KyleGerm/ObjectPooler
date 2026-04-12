@@ -36,6 +36,10 @@ namespace KylesUnityLib.Internal.Pooling
         {
             _returnMethod?.Invoke();
         }
+        public void ReturnToPool()
+        {
+            _returnMethod?.Invoke();
+        }
         internal void SetIdentifier(int chunkIndex, ulong bitMask)
         {
             this.ChunkIndex = chunkIndex;
