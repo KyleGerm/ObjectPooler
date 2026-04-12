@@ -127,7 +127,7 @@ namespace KylesUnityLib.Pooling.Tests
             Assert.Null(poolIdentifier.Entity);
         }
         [Fact]
-        public void OnReturnRemains_ButNotifyPoolIsCleared_AfterReturnToPool_HasBeenRun()
+        public void OnReturn_DoesNotRunTwice()
         {
             int notifyPoolHasBeenRun = 0;
             int onReturnHasBeenRun = 0;
@@ -143,7 +143,7 @@ namespace KylesUnityLib.Pooling.Tests
             poolIdentifier.ReturnToPool();
             poolIdentifier.ReturnToPool();
             Assert.Equal(1, notifyPoolHasBeenRun);
-            Assert.Equal(2, onReturnHasBeenRun);
+            Assert.Equal(1, onReturnHasBeenRun);
 
         }
 

@@ -135,8 +135,8 @@ namespace KylesUnityLib.Pooling
         public IPooledObject<T> GetObject(bool resizeable = false)
         {
             if (!_active) throw new PoolIsInactiveException("Pool is inactive or not in a usable state. Check Pool Setup before calling GetObject");
-
-            if (_chunkMask != 0 && GetNextAvailable(DeBruijn.TrailingZeroCount(_chunkMask)) is IPooledObject<T> obj)
+            int nextChunk = DeBruijn.TrailingZeroCount(_chunkMask);
+            if (_chunkMask != 0 && GetNextAvailable(ref nextChunk) is IPooledObject<T> obj)
                 return obj;
 
             if (resizeable && CreateNewPooledObject(true, out IPooledObject<T> newObj))
@@ -209,7 +209,7 @@ namespace KylesUnityLib.Pooling
             int populatedSlots = 0;
             if (_active)
             {
-                populatedSlots = PopulateBuffer(buffer);
+                populatedSlots = PopulateBuffer(ref buffer);
 
                 if (populatedSlots < amount && resizable)
                 {
@@ -223,42 +223,41 @@ namespace KylesUnityLib.Pooling
             return populatedSlots == amount;
         }
 
-        private int PopulateBuffer(Span<IPooledObject<T>> span)
+      
+        private int PopulateBuffer(ref IPooledObject<T>[] span)
         {
             int count = 0;
             int amount = span.Length;
-            if (_chunkMask == 0) return count;
+            if (_chunkMask == 0)
+                return 0;
+
             int availableChunk = DeBruijn.TrailingZeroCount(_chunkMask);
 
-            for (; count < amount; count++)
+            while (count < amount && _chunkMask != 0)
             {
-                if (_objMask[availableChunk] == 0)
-                {
-                    if (_chunkMask == 0) break;
-
-                    availableChunk = DeBruijn.TrailingZeroCount(_chunkMask);
-                }
-
-                span[count] = GetNextAvailable(availableChunk);
+                span[count++] = GetNextAvailable(ref availableChunk);
             }
+
             return count;
         }
 
-        private IPooledObject<T> GetNextAvailable(int availableChunk)
+        private IPooledObject<T> GetNextAvailable(ref int availableChunk)
         {
-            if (_objMask[availableChunk] == 0) return null!;
+            ref ulong mask = ref _objMask[availableChunk];
+            if (mask == 0) return null!;
 
-            int chunkIndex = DeBruijn.TrailingZeroCount(_objMask[availableChunk]);
+            int chunkIndex =  DeBruijn.TrailingZeroCount(mask);
 
             ulong bitMask = 1UL << chunkIndex;
-            _objMask[availableChunk] &= ~bitMask;
-
-            if (_objMask[availableChunk] == 0)
+            mask &= ~bitMask;
+            int currentChunk = availableChunk;
+            if (mask == 0)
             {
                 _chunkMask &= ~(1UL << availableChunk);
+                availableChunk = DeBruijn.TrailingZeroCount(_chunkMask);
             }
-            int objectIndex = (availableChunk * 64) + chunkIndex;
-            _pool[objectIndex].notifyPool += ReturnToPool;
+            int objectIndex = (currentChunk * 64) + chunkIndex;
+            _pool[objectIndex].FlagInUse();
             return _pool[objectIndex];
         }
 
@@ -319,6 +318,7 @@ namespace KylesUnityLib.Pooling
                 ulong bitMask = (1UL << (index & 63));
                 identifier.SetIdentifier(chunkIndex, bitMask);
                 newIdent = identifier;
+                identifier.notifyPool += ReturnToPool;
                 if (setActive)
                 {
                     _objMask[chunkIndex] &= ~bitMask;

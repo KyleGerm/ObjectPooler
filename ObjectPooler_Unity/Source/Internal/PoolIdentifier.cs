@@ -17,6 +17,7 @@ namespace KylesUnityLib.Internal.Pooling
         internal event Action<PoolIdentifier<T>>? notifyPool = null!;
         private FactoryCleanupMethod<T>? _cleanupMethod;
         private Action? _returnMethod;
+        private bool _returned;
         internal PoolIdentifier(T pooledObj)
         {
             Entity = pooledObj;
@@ -25,9 +26,15 @@ namespace KylesUnityLib.Internal.Pooling
         }
         private void StandardReturn()
         {
+            if(_returned) return;
+           _returned = true;
             OnReturn?.Invoke();
             notifyPool?.Invoke(this);
-            notifyPool = null;
+        //    notifyPool = null;
+        }
+        public void ReturnToPool()
+        {
+            _returnMethod?.Invoke();
         }
         public void ReturnToPool()
         {
@@ -52,6 +59,8 @@ namespace KylesUnityLib.Internal.Pooling
             Entity = null!;
             ClearEvents();
         }
+
+        internal void FlagInUse() => _returned = false;
         private void DisposalReturn()
         {
             var obj = Entity;
