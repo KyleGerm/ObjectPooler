@@ -26,6 +26,8 @@ Key performance characteristics:
   Returning objects to the pool is a lightweight flag operation, with optional
   callbacks for custom cleanup logic.
 
+  The most recent Benchmark performed with BenchmarkDotNet can be seen [here](ObjectPooler_Unity/Benchmarks/ObjectPooler.Benchmarks.ObjectPoolBenchmark-report-github.md)
+
 Limitations
 -----------
 - A single **Pool<T>** can hold a maximum of 4096 objects.  
