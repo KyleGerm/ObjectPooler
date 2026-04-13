@@ -627,6 +627,45 @@ namespace KylesUnityLib.Pooling.Tests
             pooledToReturnAfterShutdown.ReturnAll();
             Assert.Equal(100, cleanupsRun);
         }
+
+        [Fact]
+        public void VerifySize()
+        {
+            Factory<BasicPoolingClass> fac = new(() => new());
+            Pool<BasicPoolingClass> pool = Pool<BasicPoolingClass>.Create(fac, 100, 101);
+
+            IPooledObject<BasicPoolingClass>[] pooled = pool.RequestMultiple(50);
+            Assert.Equal(50,pooled.Length);
+            for (int i = 0; i < pooled.Length; i++)
+            {
+                Assert.NotNull(pooled[i]);
+                Assert.NotNull(pooled[i].Entity);
+            }
+            Assert.True(pool.RequestMultiple(ref pooled));
+            for (int i = 0; i < pooled.Length; i++)
+            {
+                Assert.NotNull(pooled[i]);
+                Assert.NotNull(pooled[i].Entity);
+            }
+        }
+
+        [Fact]
+        public void ReturnAllStressTest()
+        {
+
+            Factory<BasicPoolingClass> fac = new(() => new());
+            Pool<BasicPoolingClass> pool = Pool<BasicPoolingClass>.Create(fac, 4001, 4001);
+            IPooledObject<BasicPoolingClass>[] pooled;
+
+            for (int i = 0; i < 500; i++)
+            {
+                for(int j = 0; j < 4; j++)
+                {
+                    pooled = pool.RequestMultiple(1000);
+                }
+                pool.ReturnAll();
+            }
+        }
     }
  }
 
