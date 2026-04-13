@@ -49,7 +49,7 @@ namespace KylesUnityLib.Pooling
             MaxSize = maxSize;
             _objMask = new ulong[(MaxSize + 63) / 64];
             _factory = factory;
-            _pool = null!;
+            _pool = null!; 
         }
         internal Pool()
         {
@@ -222,25 +222,29 @@ namespace KylesUnityLib.Pooling
 
             return populatedSlots == amount;
         }
-
-      
         private int PopulateBuffer(ref IPooledObject<T>[] span)
         {
             int count = 0;
             int amount = span.Length;
-            if (_chunkMask == 0)
-                return 0;
 
-            int availableChunk = DeBruijn.TrailingZeroCount(_chunkMask);
-
-            while (count < amount && _chunkMask != 0)
+            while (_chunkMask != 0 && count < amount)
             {
-                span[count++] = GetNextAvailable(ref availableChunk);
-            }
+                int availableChunk = DeBruijn.TrailingZeroCount(_chunkMask);
+                ref ulong chunk = ref _objMask[availableChunk];
 
+                while (chunk != 0 && count < amount)
+                {
+                    int i = DeBruijn.TrailingZeroCount(chunk);
+                    span[count++] = _pool[(availableChunk * 64) + i];
+                  
+                    chunk &= chunk - 1; 
+                }
+
+                ulong clear = (ulong)-(chunk == 0 ? 1 : 0);
+                _chunkMask &= ~(clear & (1UL << availableChunk));
+            }
             return count;
         }
-
         private IPooledObject<T> GetNextAvailable(ref int availableChunk)
         {
             ref ulong mask = ref _objMask[availableChunk];
@@ -257,7 +261,6 @@ namespace KylesUnityLib.Pooling
                 availableChunk = DeBruijn.TrailingZeroCount(_chunkMask);
             }
             int objectIndex = (currentChunk * 64) + chunkIndex;
-            _pool[objectIndex].FlagInUse();
             return _pool[objectIndex];
         }
 

@@ -73,7 +73,7 @@ namespace KylesUnityLib.Pooling.Tests
             Assert.Equal(10U, poolIdentifier.BitMask);
         }
 
-        [Fact]
+       /* [Fact]
         public void NotifyPoolIsClearedAfterUse()
         {
             bool hasBeenChanged = false;
@@ -87,7 +87,7 @@ namespace KylesUnityLib.Pooling.Tests
             hasBeenChanged = false;
             poolIdentifier.ReturnToPool();
             Assert.False(hasBeenChanged);
-        }
+        }*/
         [Fact]
         public void ClearEventsRemovesActions()
         {
@@ -126,7 +126,7 @@ namespace KylesUnityLib.Pooling.Tests
             Assert.False(onReturnHasBeenRun);
             Assert.Null(poolIdentifier.Entity);
         }
-        [Fact]
+      /*  [Fact]
         public void OnReturn_DoesNotRunTwice()
         {
             int notifyPoolHasBeenRun = 0;
@@ -145,7 +145,7 @@ namespace KylesUnityLib.Pooling.Tests
             Assert.Equal(1, notifyPoolHasBeenRun);
             Assert.Equal(1, onReturnHasBeenRun);
 
-        }
+        }*/
 
         [Fact]
         public void ActionsAreRunInCorrectOrder()

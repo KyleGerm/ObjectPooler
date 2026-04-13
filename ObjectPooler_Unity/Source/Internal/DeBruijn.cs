@@ -1,5 +1,6 @@
 ﻿
 using Microsoft.Win32.SafeHandles;
+using System.Runtime.CompilerServices;
 
 namespace KylesUnityLib
 {
@@ -20,6 +21,7 @@ namespace KylesUnityLib
         };
 
         private static int _64 = 64;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static  int TrailingZeroCount(ulong value)
         {
             if (value == 0)
