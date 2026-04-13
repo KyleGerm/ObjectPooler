@@ -20,4 +20,4 @@ It cannot verify that the objects produced by CreateNewObject are valid or usabl
 
 Next -> [**DisposeObject( T )**](DisposeObject.md) 
 
-[**Back to Reference**](..\Reference.md) 
+[**Back to Reference**](../Reference.md) 

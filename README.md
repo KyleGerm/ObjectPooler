@@ -1,8 +1,12 @@
-This readme is unfinished. An updated version will be supplied shortly 
-   
+# Object Pooler
 ----------------  
 
-
+Documentation:
+------------
+**Go To: ->** [Pool\<T> Docs](ObjectPooler_Unity/Documentation/Pool/Overview.md)  
+--------------------
+**Go To ->** [Factory\<T> Docs](ObjectPooler_Unity/Documentation/Factory/Overview.md)
+-------------------
 
 Performance
 -----------
@@ -21,6 +25,8 @@ Key performance characteristics:
 - Minimal overhead on return  
   Returning objects to the pool is a lightweight flag operation, with optional
   callbacks for custom cleanup logic.
+
+  The most recent Benchmark performed with BenchmarkDotNet can be seen [here](ObjectPooler_Unity/Benchmarks/ObjectPooler.Benchmarks.ObjectPoolBenchmark-report-github.md)
 
 Limitations
 -----------

@@ -2,14 +2,14 @@
 ----------------------------------------------
 
 This is the constructor for the `Pool<T>` class.
-Use this to manually construct a new `Poll<T>`.
+Use this to manually construct a new `Pool<T>`.
 
 `maxSize` is used to set the maximum size of the pool. This is 
 unchangable once the pool is created, so assignment should be given with 
 regards to the maximum possible size the pool will reach through it's lifetime.  
 The maximum possible size which can be given is 4096. This limit exists because 
 the pool tracks object availability using a 64-bit chunk system.
-In most cases, the restriction to this size should not be an issue, but in the case more are rquired,
+In most cases, the restriction to this size should not be an issue, but in the case more are required,
 the only possible solution is to make more than one pool.
 
 `maxSize` is also used to manage the amount of memory used to track objects in the pool, 
