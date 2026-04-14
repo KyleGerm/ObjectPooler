@@ -226,22 +226,52 @@ namespace KylesUnityLib.Pooling
         {
             int count = 0;
             int amount = span.Length;
+           
 
             while (_chunkMask != 0 && count < amount)
             {
                 int availableChunk = DeBruijn.TrailingZeroCount(_chunkMask);
                 ref ulong chunk = ref _objMask[availableChunk];
+                int baseIdx = availableChunk << 6;
+                PoolIdentifier<T>[] pool = _pool;
+                while (chunk != 0 && count + 4 <= amount)
+                {
+                    int i0 = DeBruijn.TrailingZeroCount(chunk);
+                    chunk &= chunk - 1;
+                    span[count++] = pool[baseIdx + i0];
 
+                    if (chunk == 0) break;
+
+                    int i1 = DeBruijn.TrailingZeroCount(chunk);
+                    chunk &= chunk - 1;
+                    span[count++] = pool[baseIdx + i1];
+
+                    if (chunk == 0) break;
+
+                    int i2 = DeBruijn.TrailingZeroCount(chunk);
+                    chunk &= chunk - 1;
+                    span[count++] = pool[baseIdx + i2];
+
+                    if (chunk == 0) break;
+
+                    int i3 = DeBruijn.TrailingZeroCount(chunk);
+                    chunk &= chunk - 1;
+                    span[count++] = pool[baseIdx + i3];
+                }
+                if(chunk == 0 && count < amount)
+                {
+                     availableChunk = DeBruijn.TrailingZeroCount(_chunkMask);
+                    chunk = ref _objMask[availableChunk];
+                     baseIdx = availableChunk << 6;
+                }
                 while (chunk != 0 && count < amount)
                 {
                     int i = DeBruijn.TrailingZeroCount(chunk);
-                    span[count++] = _pool[(availableChunk * 64) + i];
+                    span[count++] = _pool[baseIdx + i];
                   
                     chunk &= chunk - 1; 
                 }
-
-                ulong clear = (ulong)-(chunk == 0 ? 1 : 0);
-                _chunkMask &= ~(clear & (1UL << availableChunk));
+                if (chunk == 0) _chunkMask &= ~(1UL << availableChunk);
             }
             return count;
         }

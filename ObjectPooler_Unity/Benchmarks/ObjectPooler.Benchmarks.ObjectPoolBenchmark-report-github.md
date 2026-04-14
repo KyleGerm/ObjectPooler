@@ -14,18 +14,17 @@ InvocationCount=1  UnrollFactor=1
 Job: VeryLongRun  
 IterationCount: 500  
 LaunchCount: 4  
-WarmupCount: 30  
+WarmupCount: 30
 
-
-| Method                       |Mean          | Error       | StdDev        | Median        | Allocated |
-|----------------------------- |-------------:|------------:|--------------:|--------------:|----------:|
-| GetObject                    |     5.982 ns |   0.1302 ns |     1.7611 ns |      6.000 ns |         - |
-| TryGetObject                 |     7.828 ns |   0.2268 ns |     3.0352 ns |      5.900 ns |         - |
-| RequestMultiple_Alloc1000    |11,274.861 ns | 186.6102 ns | 2,514.6146 ns | 11,125.000 ns |    8024 B |
-| RequestMultiple_NonAlloc1000 | 9,219.943 ns |  80.9441 ns |   999.2488 ns |  9,050.000 ns |         - |
-| RequestMultiple_Alloc100     | 1,015.932 ns |  31.1541 ns |   421.9390 ns |  1,142.500 ns |     824 B |
-| RequestMultiple_NonAlloc100  |   794.737 ns |  21.2937 ns |   287.1557 ns |    827.500 ns |         - |
-| RequestMultiple_Alloc10      |   108.902 ns |   3.4706 ns |    46.8627 ns |     99.000 ns |     104 B |
-| RequestMultiple_NonAlloc10   |    64.010 ns |   0.9923 ns |    11.9795 ns |     59.500 ns |         - |
-| GetObjectManual_10x          |    91.452 ns |   1.5561 ns |    20.9795 ns |     89.000 ns |         - |
+| Method                       | Mean          | Error       | StdDev        | Median        | Allocated |
+|----------------------------- |--------------:|------------:|--------------:|--------------:|----------:|
+| GetObject                    |      4.353 ns |   0.0409 ns |     0.5294 ns |      4.175 ns |         - |
+| TryGetObject                 |      4.664 ns |   0.0304 ns |     0.3662 ns |      4.600 ns |         - |
+| RequestMultiple_Alloc1000    |  9,184.828 ns | 171.5521 ns | 2,312.8788 ns |  9,250.000 ns |    8024 B |
+| RequestMultiple_NonAlloc1000 |  7,592.886 ns |  77.1601 ns |   981.2536 ns |  7,350.000 ns |         - |
+| RequestMultiple_Alloc100     |    917.059 ns |  26.8763 ns |   363.2683 ns |  1,020.000 ns |     824 B |
+| RequestMultiple_NonAlloc100  |    723.269 ns |  15.8180 ns |   213.5300 ns |    725.000 ns |         - |
+| RequestMultiple_Alloc10      |    103.921 ns |   3.9183 ns |    52.6659 ns |     90.000 ns |     104 B |
+| RequestMultiple_NonAlloc10   |     59.021 ns |   0.4801 ns |     5.7557 ns |     58.000 ns |         - |
+| GetObjectManual_10x          |     81.918 ns |   1.1621 ns |    15.6203 ns |     75.500 ns |         - |
 
